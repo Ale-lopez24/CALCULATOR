@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Gas - Placa de Orificio</title>
+    <style>
+        :root {
+            --primary-color: #1b263b;
+            --secondary-color: #415a77;
+            --accent-color: #e07a5f;
+            --success-color: #2a9d8f;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --border-color: #ced4da;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border-top: 5px solid var(--primary-color);
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: #adb5bd;
+        }
+
+        .form-container {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e9ecef;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #fff;
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(65, 90, 119, 0.15);
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        .btn-calculate {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(224, 122, 95, 0.3);
+        }
+
+        .btn-calculate:active {
+            transform: scale(0.98);
+        }
+
+        .btn-calculate:hover {
+            background-color: #d1694e;
+        }
+
+        .results-container {
+            background-color: #f8f9fa;
+            border-top: 2px dashed var(--border-color);
+            padding: 20px;
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .result-card.full-width {
+            grid-column: span 2;
+            background: #e8f5e9;
+            border-color: #c8e6c9;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .result-card.full-width .result-value {
+            color: #2e7d32;
+            font-size: 1.3rem;
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: none;
+            border-left: 4px solid #c62828;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+            }
+            .container {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            .result-card.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Calculadora de Gas</h1>
+            <p>Medición por Placa de Orificio - Campo</p>
+        </div>
+
+        <div class="form-container">
+            <div id="errorAlert" class="error-message"></div>
+
+            <form id="gasCalculatorForm">
+                <div class="section-title">1. Configuración de Línea y Plato</div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label for="lineDiameter">Diámetro de Línea</label>
+                        <select id="lineDiameter" required>
+                            <option value="">Seleccione...</option>
+                            <option value="2">Línea 2"</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="plateDiameter">Diámetro de Orificio</label>
+                        <select id="plateDiameter" required>
+                            <option value="">Seleccione línea primero...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">2. Parámetros Operativos</div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="staticPressure">Presión Estática (psi)</label>
+                        <input type="number" id="staticPressure" step="any" placeholder="Ej. 150" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diffPressure">Presión Diferencial ("W.C.)</label>
+                        <input type="number" id="diffPressure" step="any" placeholder="Ej. 50" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="operatingHours">Horas de Operación</label>
+                        <input type="number" id="operatingHours" step="any" min="0" max="24" placeholder="Ej. 24" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="injTime">T. Inyección (seg)</label>
+                        <input type="number" id="injTime" step="any" min="0" placeholder="Ej. 30" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="restTime">T. Reposo (seg)</label>
+                    <input type="number" id="restTime" step="any" min="0" placeholder="Ej. 10" required>
+                </div>
+
+                <button type="button" class="btn-calculate" onclick="calcular()">Calcular</button>
+            </form>
+        </div>
+
+        <div id="resultsSection" class="results-container">
+            <div class="section-title" style="margin-bottom: 15px;">Resultados de Cálculo</div>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-label">Constante K</div>
+                    <div class="result-value" id="resK">-</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">MSCFD</div>
+                    <div class="result-value" id="resMSCFD">-</div>
+                </div>
+                <div class="result-card full-width">
+                    <div class="result-label">Volumen Real</div>
+                    <div class="result-value" id="resVolReal">-</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Ciclo Total</div>
+                    <div class="result-value" id="resCicloTotal">-</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Ciclos / Hora</div>
+                    <div class="result-value" id="resCiclosHora">-</div>
+                </div>
+                <div class="result-card full-width">
+                    <div class="result-label">Ciclos / Día</div>
+                    <div class="result-value" id="resCiclosDia">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de datos de Constantes K estructurada por Línea y Plato
+        const constantesK = {
+            "2": {
+                "1": 6190.558,
+                "1-1/8": 8001.021,
+                "1-1/4": 10163.388,
+                "1-1/2": 15968.472,
+                "1-3/4": 24968.472
+            }
+            // Aquí se pueden agregar fácilmente más diámetros de línea y platos en el futuro
+        };
+
+        // Referencias del DOM
+        const lineSelect = document.getElementById('lineDiameter');
+        const plateSelect = document.getElementById('plateDiameter');
+        const errorAlert = document.getElementById('errorAlert');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // Actualizar opciones de plato según la línea seleccionada
+        lineSelect.addEventListener('change', function() {
+            const linea = this.value;
+            plateDiameter.innerHTML = '<option value="">Seleccione plato...</option>';
+            
+            if (linea && constantesK[linea]) {
+                const platos = constantesK[linea];
+                for (let plato in platos) {
+                    let option = document.createElement('option');
+                    option.value = plato;
+                    option.textContent = `Plato ${plato}"`;
+                    plateSelect.appendChild(option);
+                }
+            }
+        });
+
+        function mostrarError(mensaje) {
+            errorAlert.textContent = mensaje;
+            errorAlert.style.display = 'block';
+            resultsSection.classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function ocultarError() {
+            errorAlert.style.display = 'none';
+        }
+
+        function calcular() {
+            ocultarError();
+
+            // Capturar valores
+            const linea = lineSelect.value;
+            const plato = plateSelect.value;
+            const P_estatica = parseFloat(document.getElementById('staticPressure').value);
+            const P_diferencial = parseFloat(document.getElementById('diffPressure').value);
+            const hrs_operacion = parseFloat(document.getElementById('operatingHours').value);
+            const t_inyeccion = parseFloat(document.getElementById('injTime').value);
+            const t_reposo = parseFloat(document.getElementById('restTime').value);
+
+            // Validaciones
+            if (!linea || !plato) {
+                mostrarError("Debe seleccionar el diámetro de línea y el plato de orificio.");
+                return;
+            }
+
+            if (isNaN(P_estatica) || isNaN(P_diferencial) || isNaN(hrs_operacion) || isNaN(t_inyeccion) || isNaN(t_reposo)) {
+                mostrarError("Por favor, complete todos los campos obligatorios.");
+                return;
+            }
+
+            if (P_estatica < 0 || P_diferencial < 0 || hrs_operacion < 0 || t_inyeccion < 0 || t_reposo < 0) {
+                mostrarError("No se permiten valores negativos en los campos.");
+                return;
+            }
+
+            if (hrs_operacion > 24) {
+                mostrarError("Las horas de operación no pueden ser mayores a 24.");
+                return;
+            }
+
+            const cicloTotal = t_inyeccion + t_reposo;
+            if (cicloTotal <= 0) {
+                mostrarError("El tiempo de inyección y reposo no pueden ser cero simultáneamente.");
+                return;
+            }
+
+            // Obtener Constante K
+            const K = constantesK[linea][plato];
+
+            // Fórmulas
+            const mscfd = (K * Math.sqrt(P_estatica * P_diferencial)) / 1000;
+            const volumenReal = mscfd * (hrs_operacion / 24);
+            const ciclosHora = 3600 / cicloTotal;
+            const ciclosDia = ciclosHora * 24;
+
+            // Mostrar Resultados en Pantalla (con formato de decimales amigable)
+            document.getElementById('resK').textContent = K.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+            document.getElementById('resMSCFD').textContent = mscfd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('resVolReal').textContent = volumenReal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('resCicloTotal').textContent = cicloTotal.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " seg";
+            document.getElementById('resCiclosHora').textContent = ciclosHora.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            document.getElementById('resCiclosDia').textContent = ciclosDia.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+            // Mostrar sección de resultados
+            resultsSection.classList.add('active');
+            
+            // Desplazarse suavemente hacia los resultados en móviles
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
